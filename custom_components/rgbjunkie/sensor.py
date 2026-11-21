@@ -3,27 +3,33 @@
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import RgbjunkieConfigEntry
 from .const import DOMAIN
 from .coordinator import RgbjunkieCoordinator
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: RgbjunkieConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: RgbjunkieCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities(
         [
-            DeskSensor(coordinator, entry, "devices_online", "Devices online", "devicesOnline"),
-            DeskSensor(coordinator, entry, "devices_total", "Devices total", "devicesTotal"),
+            DeskSensor(
+                coordinator, entry, "devices_online", "Devices online", "devicesOnline"
+            ),
+            DeskSensor(
+                coordinator, entry, "devices_total", "Devices total", "devicesTotal"
+            ),
             DeskSensor(coordinator, entry, "effect_fps", "Effect FPS", "effectFps"),
         ]
     )
@@ -37,7 +43,7 @@ class DeskSensor(CoordinatorEntity[RgbjunkieCoordinator], SensorEntity):
     def __init__(
         self,
         coordinator: RgbjunkieCoordinator,
-        entry: ConfigEntry,
+        entry: RgbjunkieConfigEntry,
         key: str,
         name: str,
         data_key: str,

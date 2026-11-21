@@ -3,22 +3,24 @@
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import RgbjunkieConfigEntry
 from .const import DOMAIN, USE_DESK_EFFECT
 from .coordinator import RgbjunkieCoordinator
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: RgbjunkieConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: RgbjunkieCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     known: set[str] = set()
 
     def _sync() -> None:
@@ -50,7 +52,9 @@ class DeskSceneSelect(CoordinatorEntity[RgbjunkieCoordinator], SelectEntity):
     _attr_name = "Scene"
     _attr_translation_key = "scene"
 
-    def __init__(self, coordinator: RgbjunkieCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, coordinator: RgbjunkieCoordinator, entry: RgbjunkieConfigEntry
+    ) -> None:
         super().__init__(coordinator)
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_scene"
@@ -85,7 +89,9 @@ class DeskEffectSelect(CoordinatorEntity[RgbjunkieCoordinator], SelectEntity):
     _attr_name = "Effect"
     _attr_translation_key = "effect"
 
-    def __init__(self, coordinator: RgbjunkieCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, coordinator: RgbjunkieCoordinator, entry: RgbjunkieConfigEntry
+    ) -> None:
         super().__init__(coordinator)
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_effect"
@@ -123,7 +129,7 @@ class DeviceEffectSelect(CoordinatorEntity[RgbjunkieCoordinator], SelectEntity):
     def __init__(
         self,
         coordinator: RgbjunkieCoordinator,
-        entry: ConfigEntry,
+        entry: RgbjunkieConfigEntry,
         device_id: str,
     ) -> None:
         super().__init__(coordinator)
@@ -167,7 +173,6 @@ class DeviceEffectSelect(CoordinatorEntity[RgbjunkieCoordinator], SelectEntity):
         if option == USE_DESK_EFFECT:
             await self.coordinator.api.clear_device_effect(self._device_id)
         else:
-            # Prefer catalog id when we can match the display name.
             effect_id = option
             for row in self.coordinator.effects:
                 if str(row.get("name") or "") == option:

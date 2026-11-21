@@ -3,28 +3,34 @@
 from __future__ import annotations
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import RgbjunkieConfigEntry
 from .const import DOMAIN
 from .coordinator import RgbjunkieCoordinator
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: RgbjunkieConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: RgbjunkieCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities(
         [
             StepButton(coordinator, entry, "next_effect", "Next effect", False, True),
-            StepButton(coordinator, entry, "previous_effect", "Previous effect", True, True),
+            StepButton(
+                coordinator, entry, "previous_effect", "Previous effect", True, True
+            ),
             StepButton(coordinator, entry, "next_scene", "Next scene", False, False),
-            StepButton(coordinator, entry, "previous_scene", "Previous scene", True, False),
+            StepButton(
+                coordinator, entry, "previous_scene", "Previous scene", True, False
+            ),
         ]
     )
 
@@ -35,7 +41,7 @@ class StepButton(CoordinatorEntity[RgbjunkieCoordinator], ButtonEntity):
     def __init__(
         self,
         coordinator: RgbjunkieCoordinator,
-        entry: ConfigEntry,
+        entry: RgbjunkieConfigEntry,
         key: str,
         name: str,
         previous: bool,

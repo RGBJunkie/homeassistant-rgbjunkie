@@ -5,14 +5,16 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import RgbjunkieConfigEntry
 from .const import DOMAIN
 from .coordinator import RgbjunkieCoordinator
+
+PARALLEL_UPDATES = 0
 
 
 def _ha_brightness_to_percent(brightness: int) -> int:
@@ -25,10 +27,10 @@ def _percent_to_ha_brightness(percent: int) -> int:
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: RgbjunkieConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: RgbjunkieCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     known: set[str] = set()
 
     def _sync() -> None:
@@ -58,7 +60,9 @@ class DeskLight(CoordinatorEntity[RgbjunkieCoordinator], LightEntity):
     _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
     _attr_color_mode = ColorMode.BRIGHTNESS
 
-    def __init__(self, coordinator: RgbjunkieCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, coordinator: RgbjunkieCoordinator, entry: RgbjunkieConfigEntry
+    ) -> None:
         super().__init__(coordinator)
         self._entry = entry
         self._last_on_percent = 100
@@ -130,7 +134,7 @@ class DeviceLight(CoordinatorEntity[RgbjunkieCoordinator], LightEntity):
     def __init__(
         self,
         coordinator: RgbjunkieCoordinator,
-        entry: ConfigEntry,
+        entry: RgbjunkieConfigEntry,
         device_id: str,
     ) -> None:
         super().__init__(coordinator)

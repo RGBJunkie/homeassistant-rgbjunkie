@@ -2,23 +2,27 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import RgbjunkieConfigEntry
 from .const import DOMAIN
 from .coordinator import RgbjunkieCoordinator
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: RgbjunkieConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: RgbjunkieCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities([PausedSwitch(coordinator, entry)])
 
 
@@ -27,7 +31,9 @@ class PausedSwitch(CoordinatorEntity[RgbjunkieCoordinator], SwitchEntity):
     _attr_name = "Paused"
     _attr_translation_key = "paused"
 
-    def __init__(self, coordinator: RgbjunkieCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, coordinator: RgbjunkieCoordinator, entry: RgbjunkieConfigEntry
+    ) -> None:
         super().__init__(coordinator)
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_paused"
@@ -47,10 +53,10 @@ class PausedSwitch(CoordinatorEntity[RgbjunkieCoordinator], SwitchEntity):
     def _update_from_coordinator(self) -> None:
         self._attr_is_on = bool((self.coordinator.data or {}).get("paused"))
 
-    async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         await self.coordinator.api.set_paused(True)
         await self.coordinator.async_request_refresh()
 
-    async def async_turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         await self.coordinator.api.set_paused(False)
         await self.coordinator.async_request_refresh()

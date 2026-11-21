@@ -5,7 +5,9 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import RgbjunkieApi, RgbjunkieApiError, RgbjunkieAuthError
@@ -15,14 +17,21 @@ from .const import DOMAIN, SCAN_INTERVAL_SECONDS
 class RgbjunkieCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Polls Lights3D status and catalogs."""
 
-    def __init__(self, hass: HomeAssistant, api: RgbjunkieApi) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        api: RgbjunkieApi,
+        entry: ConfigEntry,
+    ) -> None:
         super().__init__(
             hass,
             logger=__import__("logging").getLogger(__name__),
             name=DOMAIN,
             update_interval=timedelta(seconds=SCAN_INTERVAL_SECONDS),
+            config_entry=entry,
         )
         self.api = api
+        self.entry = entry
         self.effects: list[dict[str, Any]] = []
         self.scenes: list[dict[str, Any]] = []
         self._catalog_ticks = 0
@@ -42,7 +51,7 @@ class RgbjunkieCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self.scenes = scenes
             return status
         except RgbjunkieAuthError as err:
-            raise UpdateFailed("Invalid token") from err
+            raise ConfigEntryAuthFailed("Invalid token") from err
         except RgbjunkieApiError as err:
             raise UpdateFailed(str(err)) from err
 
@@ -58,12 +67,11 @@ class RgbjunkieCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return rows if isinstance(rows, list) else []
 
     def effect_names(self) -> list[str]:
-        names = [
+        return [
             str(e.get("name") or e.get("id") or "").strip()
             for e in self.effects
             if str(e.get("name") or e.get("id") or "").strip()
         ]
-        return names
 
     def scene_names(self) -> list[str]:
         return [

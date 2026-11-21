@@ -9,6 +9,24 @@
           "port": "Port",
           "token": "Token"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate Lights3D",
+        "description": "The bridge rejected the token. Copy a fresh one from Lights3D Settings → Remote.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "token": "Token"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Lights3D",
+        "description": "Update the PC address, port, or token for this desk.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "token": "Token"
+        }
       }
     },
     "error": {
@@ -16,7 +34,29 @@
       "invalid_auth": "Token was rejected. Copy a fresh token from Lights3D Settings → Remote."
     },
     "abort": {
-      "already_configured": "This Lights3D bridge is already configured."
+      "already_configured": "This Lights3D bridge is already configured.",
+      "reauth_successful": "Reauthenticated successfully.",
+      "reconfigure_successful": "Reconfigured successfully.",
+      "reauth_failed": "Could not find the integration entry to reauthenticate.",
+      "wrong_account": "Those settings belong to a different Lights3D bridge."
+    }
+  },
+  "entity": {
+    "select": {
+      "scene": {
+        "name": "Scene"
+      },
+      "effect": {
+        "name": "Effect"
+      },
+      "device_effect": {
+        "name": "Effect"
+      }
+    },
+    "switch": {
+      "paused": {
+        "name": "Paused"
+      }
     }
   }
 }
