@@ -1,0 +1,67 @@
+"""Data update coordinator for RGBJunkie Lights3D."""
+
+from __future__ import annotations
+
+from datetime import timedelta
+from typing import Any
+
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from .api import RgbjunkieApi, RgbjunkieApiError, RgbjunkieAuthError
+from .const import DOMAIN, SCAN_INTERVAL_SECONDS
+
+
+class RgbjunkieCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+    """Polls Lights3D status and catalogs."""
+
+    def __init__(self, hass: HomeAssistant, api: RgbjunkieApi) -> None:
+        super().__init__(
+            hass,
+            logger=__import__("logging").getLogger(__name__),
+            name=DOMAIN,
+            update_interval=timedelta(seconds=SCAN_INTERVAL_SECONDS),
+        )
+        self.api = api
+        self.effects: list[dict[str, Any]] = []
+        self.scenes: list[dict[str, Any]] = []
+        self._catalog_ticks = 0
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        try:
+            status = await self.api.get_status()
+            self._catalog_ticks += 1
+            if self._catalog_ticks == 1 or self._catalog_ticks % 15 == 0:
+                self.effects = await self.api.get_effects()
+                self.scenes = await self.api.get_scenes()
+            return status
+        except RgbjunkieAuthError as err:
+            raise UpdateFailed("Invalid token") from err
+        except RgbjunkieApiError as err:
+            raise UpdateFailed(str(err)) from err
+
+    @property
+    def pc_name(self) -> str:
+        data = self.data or {}
+        name = str(data.get("pcName") or "").strip()
+        return name or "RGBJunkie Desk"
+
+    @property
+    def devices(self) -> list[dict[str, Any]]:
+        rows = (self.data or {}).get("devices")
+        return rows if isinstance(rows, list) else []
+
+    def effect_names(self) -> list[str]:
+        names = [
+            str(e.get("name") or e.get("id") or "").strip()
+            for e in self.effects
+            if str(e.get("name") or e.get("id") or "").strip()
+        ]
+        return names
+
+    def scene_names(self) -> list[str]:
+        return [
+            str(s.get("name") or "").strip()
+            for s in self.scenes
+            if str(s.get("name") or "").strip()
+        ]
