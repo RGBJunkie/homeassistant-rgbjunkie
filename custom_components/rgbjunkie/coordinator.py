@@ -31,9 +31,15 @@ class RgbjunkieCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             status = await self.api.get_status()
             self._catalog_ticks += 1
-            if self._catalog_ticks == 1 or self._catalog_ticks % 15 == 0:
-                self.effects = await self.api.get_effects()
-                self.scenes = await self.api.get_scenes()
+            # Refresh often until both catalogs arrive, then every ~30 s.
+            need_catalog = not self.effects or not self.scenes
+            if need_catalog or self._catalog_ticks == 1 or self._catalog_ticks % 15 == 0:
+                effects = await self.api.get_effects()
+                scenes = await self.api.get_scenes()
+                if effects:
+                    self.effects = effects
+                if scenes:
+                    self.scenes = scenes
             return status
         except RgbjunkieAuthError as err:
             raise UpdateFailed("Invalid token") from err
