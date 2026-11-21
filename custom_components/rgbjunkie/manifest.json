@@ -1,7 +1,7 @@
 {
   "domain": "rgbjunkie",
   "name": "RGBJunkie Lights3D",
-  "categories": ["lighting.lighting_systems"],
+  "categories": ["lighting.led_strips_controllers"],
   "codeowners": ["@RGBJunkie"],
   "config_flow": true,
   "documentation": "https://github.com/RGBJunkie/homeassistant-rgbjunkie",
@@ -9,5 +9,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/RGBJunkie/homeassistant-rgbjunkie/issues",
   "requirements": [],
-  "version": "0.2.1"
+  "version": "0.2.2"
 }
